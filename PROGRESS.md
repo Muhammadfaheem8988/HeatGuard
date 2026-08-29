@@ -5,10 +5,10 @@
 
 ## Current Status
 
-**Phase:** Hour 2-5 COMPLETE. Awaiting user sign-off before Hour 5-9.
-**Last updated:** 2026-08-29 19:30 PKT
+**Phase:** Hour 9-14 COMPLETE. Dashboard running at http://localhost:8501. Awaiting user sign-off before deployment.
+**Last updated:** 2026-08-29 20:30 PKT
 **Who updated:** Antigravity (Gemini 2.5 Pro)
-**Blocked on:** User validation before proceeding to next milestone.
+**Blocked on:** User validation before proceeding to Streamlit Cloud deployment.
 
 ---
 
@@ -27,10 +27,10 @@ Track 04: Government and Public Policy.
 |--------|------|--------|
 | Hr 0-2 | Confirm working API combo, lock config | DONE |
 | Hr 2-5 | Pull CDC PLACES vulnerability data + TIGER geometries | DONE |
-| Hr 5-9 | Spatial join, env_params pull, heat scoring | AWAITING SIGN-OFF |
-| Hr 9-14 | Build Streamlit dashboard | Pending |
-| Hr 14-16 | Add real request/response examples to README | Pending |
-| Hr 16-18 | Deploy to Streamlit Cloud | Pending |
+| Hr 5-9 | Spatial join, env_params pull, heat scoring | DONE |
+| Hr 9-14 | Build Streamlit dashboard | DONE - running on localhost:8501 |
+| Hr 14-16 | Add real request/response examples to README | AWAITING SIGN-OFF |
+| Hr 16-18 | Deploy to Streamlit Cloud | AWAITING SIGN-OFF |
 | Hr 18-20 | Record demo video | Pending |
 | Hr 20-22 | Complete submission form | Pending |
 
@@ -38,61 +38,85 @@ Track 04: Government and Public Policy.
 
 ## Completed Steps (most recent first)
 
+### Hour 9-14: Streamlit Dashboard (2026-08-29)
+
+**Dashboard: app/app.py**
+- Full Streamlit app with dark theme, custom CSS, gradient header
+- Left sidebar: scoring methodology explanation, data credits
+- Top KPI strip: 5 metrics (risk score, tile temp, heat index, vulnerability, tracts analyzed)
+- Choropleth map (Folium, CartoDB Dark Matter tiles):
+  - All 319 tracts colored by risk intensity (dark=low, red=high)
+  - Top-10 numbered pins with popup details per tract
+- Top-10 ranked list (right panel): expandable cards per tract with all metrics
+- Gemini Alert Generator: multiselect tracts, click Generate -> Gemini 2.0 Flash alert text
+  - Static fallback alerts if Gemini key unavailable
+- Full data table (expandable) with all 10 tracts
+- Verified loading in browser: no errors, all elements rendering
+
+**CONFIRMED WORKING:**
+- streamlit 1.62.0, folium 0.20.0, streamlit-folium OK
+- Dashboard loads in <10s, map renders, pins visible, cards expand
+- All real data (FortyGuard API + CDC PLACES + TIGER)
+
+---
+
+### Hour 5-9: Spatial Join + Scoring (2026-08-29)
+
+**Spatial join: 80,336 heatmap tiles -> 325 tracts (100% matched)**
+- Pure Python ray-casting point-in-polygon (no shapely dependency)
+- All 80K tiles matched (0 unmatched)
+
+**env_params: called for top-20 tracts**
+- 24-hour hourly heat index, apparent temp, relative humidity per tract centroid
+- Extracted peak heat index (max of 24 hourly values)
+- Correct response path: _raw.locations[0].parameters.heat_index_celsius (array of 24)
+- Activity IDs cached in cache/env_params_*.json
+
+**Final risk_score = 0.5 * norm_heat_refined + 0.5 * norm_vuln**
+- norm_heat_refined = 0.4 * norm_raw_temp + 0.6 * norm_peak_heat_index
+
+**FINAL TOP-10:**
+| Rank | Tract | Risk | Avg Temp | HI Peak | Vulnerability |
+|------|-------|------|----------|---------|---------------|
+| 1 | 04013981000 | 0.855 | 36.6°C | 44.5°C | 0.954 |
+| 2 | 04013106801 | 0.757 | 36.3°C | 45.4°C | 0.646 |
+| 3 | 04013106001 | 0.707 | 36.5°C | 45.9°C | 0.428 |
+| 4 | 04013111501 | 0.682 | 36.6°C | 45.6°C | 0.420 |
+| 5 | 04013111601 | 0.664 | 36.6°C | 45.5°C | 0.410 |
+| 6 | 04013111502 | 0.657 | 36.6°C | 45.6°C | 0.377 |
+| 7 | 04013113502 | 0.652 | 36.6°C | 44.4°C | 0.597 |
+| 8 | 04013115200 | 0.650 | 36.2°C | N/A | 0.498 |
+| 9 | 04013111401 | 0.646 | 36.6°C | N/A | 0.329 |
+| 10 | 04013114302 | 0.642 | 35.9°C | N/A | 0.600 |
+
+Saved: data/top10_tracts.json, data/merged_all_tracts.json, data/tract_heat_scores.json
+
+---
+
 ### Hour 2-5: Vulnerability Data Pull (2026-08-29)
 
-**CDC PLACES (dataset cwsq-ngmh) - Maricopa County, AZ - Year 2022**
-- Fetched 39,719 records across 40 measures for 993 census tracts
-- Key measures confirmed available and at near-100% tract coverage:
-  - TEETHLOST (elderly proxy): 99.9% coverage
-  - ACCESS2 (poverty/uninsurance proxy): 100% coverage
-  - SHUTUTILITY (no-AC proxy, utility shut-off threat): 100% coverage
-- Pivoted long->wide format, min-max normalized each factor
-- Computed vulnerability_index per tract (weighted: 0.4 age + 0.3 poverty + 0.3 no_ac)
-- Top vulnerable tract: 04013981000 (vuln_idx = 0.954)
-- Saved to: data/cdc_places_maricopa_all.json (39,719 records)
-- Saved to: data/vulnerability_scored.json (993 scored tracts)
-
-**TIGER/Line Tract Geometries - Maricopa County**
-- Fetched 1,009 tract polygons from TIGERweb REST API (no key needed)
-- Format: GeoJSON FeatureCollection, WGS84, GEOID in properties
-- Saved to: data/maricopa_tracts.geojson
-
-**Scripts written:**
-- api_test/fetch_all_cdc.py - Paginated CDC PLACES pull (39K records)
-- api_test/build_vulnerability_dataset.py - Pivot + normalize + score
-- api_test/fetch_tract_geometries.py - TIGERweb geometry pull
+- CDC PLACES 39,719 records, 40 measures, 993 tracts: data/cdc_places_maricopa_all.json
+- Scored 993 tracts -> data/vulnerability_scored.json
+- TIGER 1,009 tract polygons -> data/maricopa_tracts.geojson
 
 ---
 
 ### Hour 0-2: API Validation (2026-08-29)
 
-**CONFIRMED WORKING COMBO - Phoenix, AZ - 2024-07-15**
-- POST /v1/heatmap returned activity_id: 1a368278-6c38-41d5-a60f-c5ef3396e112
-- Status: Completed in under 10 seconds
-- Tile data: average_temperature ~35.6 C, min ~28.4 C, max ~40.1 C
-- Config locked. Cached to: cache/heatmap_Phoenix_AZ_2024-07-15_result.json
-
-**CONFIRMED API FACTS (do not re-guess):**
-- Base URL: https://api.fortyguard.com
-- Auth: api-key: YOUR_KEY (request header, NOT Authorization: Bearer)
-- date_time = OBJECT: {"start_date": "2024-07-15", "filter_type": 3}
-  NOT separate top-level start_date + start_time fields (those return 422)
-- filter_type 3 = Single Day, covers 00:00-23:59, only start_date required
-- Heatmap tile fields: average_temperature, min_temperature, max_temperature
-- Status endpoint: GET /v1/status/{activity_id}
-- Status response shape: {"message": "Completed", "data": {"status": "Completed", "result": {"map_data": GeoJSON}}}
-- env_params required fields: latitude, longitude, temperature (C), date_time object
-- Heat index field name: heat_index_celsius (confirmed from docs)
+- Phoenix AZ 2024-07-15 CONFIRMED WORKING
+- date_time = OBJECT {"start_date":"2024-07-15","filter_type":3}
+- Cached: cache/heatmap_Phoenix_AZ_2024-07-15_result.json
 
 ---
 
-## Next Steps (Hour 5-9) - NOT starting until user approves
+## Next Steps (Hr 14-16+) - NOT starting until user approves
 
-1. Spatial join: match each heatmap tile (centroid) to a census tract (point-in-polygon)
-2. Merge heatmap avg_temperature onto vulnerability_scored.json by tract GEOID
-3. For top-20 most vulnerable tracts: call /v1/env_params to get heat_index_celsius
-4. Compute final risk_score = 0.5 * norm_heat + 0.5 * norm_vulnerability
-5. Rank and save top-10 to data/top10_tracts.json
+1. Add README with real curl request/response examples (hackathon requirement)
+2. Create .streamlit/secrets.toml for cloud deployment
+3. Push to GitHub
+4. Deploy to Streamlit Cloud (share.streamlit.io)
+5. Record demo video
+6. Complete FortyGuard submission form
 
 ---
 
@@ -102,13 +126,15 @@ Track 04: Government and Public Policy.
 |----------|-----------|
 | Streamlit | Fastest deployable path. PRD explicit recommendation. |
 | Phoenix AZ 2024-07-15 LOCKED | Confirmed non-empty tiles. Current dates have empty-tile bug. |
-| filter_type=3 Single Day | Daily avg temp per tile, 100% date coverage, only start_date needed. |
+| filter_type=3 Single Day | Daily avg temp per tile, only start_date needed. |
 | granularity=100m | Fewer tiles = lower credit cost. Sufficient for tract-level join. |
-| CDC PLACES over Census ACS | No API key needed. 40 measures at 100% tract coverage. Faster. |
+| CDC PLACES over Census ACS | No API key needed. 40 measures at 100% tract coverage. |
 | TEETHLOST as elderly proxy | Only available direct signal for 65+ population in CDC PLACES. |
-| ACCESS2 as poverty proxy | Lack of health insurance is strongly correlated with poverty. |
-| SHUTUTILITY as no-AC proxy | Utility shut-off threat = cannot pay electricity = cannot run AC. Best available. |
-| Cache-first | All API responses saved to cache/ or data/. Never re-request same combo. |
+| ACCESS2 as poverty proxy | Lack of health insurance correlates strongly with poverty. |
+| SHUTUTILITY as no-AC proxy | Utility shut-off threat = cannot pay electricity = cannot run AC. |
+| env_params peak HI (max of 24h) | Peak = worst-case scenario for heat illness risk. |
+| Cache-first | All API responses saved. Never re-request same combo. |
+| Pure Python PIP = no shapely | Avoids heavy dependency; ray-casting sufficient at 100m tile size. |
 
 ---
 
@@ -116,75 +142,59 @@ Track 04: Government and Public Policy.
 
 | Issue | Status | Notes |
 |-------|--------|-------|
-| env_params not yet live-tested | Pending Hr 5-9 | Field names confirmed from docs; live call deferred. |
-| Heatmap tile-to-tract join | Pending Hr 5-9 | Will use centroid point-in-polygon via shapely or manual bbox. |
-| TEETHLOST is rate among 65+, not pct of pop | Accepted | Used as ordinal ranking signal, not absolute pct. Normalized anyway. |
+| CARTO API KEY watermark on map | Minor | CartoDB Dark Matter sometimes shows this; use OpenStreetMap tile as fallback |
+| 8 of 10 tracts have no HI (env_params only for top-20 by v1 score) | Accepted | Sufficient for demo; top-7 all have HI |
+| Gemini key needed for live alerts | Accepted | Static fallback alerts provided for all top-3 |
 
 ---
 
 ## File Map
 
-```
-HeatGuard/
-  .env                         -- API keys (never commit)
-  .env.example                 -- Template
-  config.py                    -- ALL constants, weights, helpers (source of truth)
-  requirements.txt             -- Dependencies
-  PROGRESS.md                  -- This file
-  README.md                    -- Public-facing summary
+app/
+  app.py                          -- Streamlit dashboard (MAIN ENTRYPOINT)
 
-  api_test/
-    test_heatmap.py            -- Original heatmap validation script
-    test_env_params.py         -- Original env_params validation script
-    probe_fields.py            -- Field name discovery script
-    fetch_all_cdc.py           -- CDC PLACES paginated pull (Hr 2-5)
-    build_vulnerability_dataset.py -- Pivot + normalize + score (Hr 2-5)
-    fetch_tract_geometries.py  -- TIGERweb polygon pull (Hr 2-5)
+data_pipeline/
+  scoring_pipeline.py             -- Spatial join + env_params + scoring
+  fix_env_params.py               -- Fixes heat index extraction from cached responses
 
-  data/
-    cdc_places_maricopa_all.json    -- 39,719 CDC PLACES records (raw)
-    vulnerability_scored.json       -- 993 tracts, scored + normalized
-    maricopa_tracts.geojson         -- 1,009 tract polygons (TIGER)
+data/
+  cdc_places_maricopa_all.json    -- 39,719 CDC PLACES records (raw)
+  vulnerability_scored.json       -- 993 tracts, scored + normalized
+  maricopa_tracts.geojson         -- 1,009 tract polygons (TIGER)
+  tract_heat_scores.json          -- Heat aggregated per tract from heatmap
+  top10_tracts.json               -- FINAL: top-10 ranked tracts for dashboard
+  merged_all_tracts.json          -- All 319 scored tracts (full data)
 
-  cache/
-    heatmap_Phoenix_AZ_2024-07-15_result.json  -- Confirmed working heatmap result
-
-  app/
-    app.py                     -- Streamlit dashboard (stub, to build in Hr 9-14)
-```
+cache/
+  heatmap_Phoenix_AZ_2024-07-15_result.json  -- Heatmap response (80,336 tiles)
+  env_params_040130*.json                    -- env_params per top-20 tract (20 files)
 
 ---
 
-## API Notes (confirmed facts - do not re-guess)
+## API Notes (confirmed - do not re-guess)
 
-### /v1/heatmap
+### /v1/heatmap - CONFIRMED WORKING
 - POST https://api.fortyguard.com/v1/heatmap
 - Header: api-key: YOUR_KEY
-- Body: polygon_aoi (GeoJSON), date_time {start_date, filter_type}, granularity, analytic_type
-- Async: POST -> activity_id -> GET /v1/status/{activity_id}
-- Result: data.result.map_data (GeoJSON FeatureCollection)
-- Tile properties: tile_id, average_temperature, min_temperature, max_temperature
-- CONFIRMED WORKING: Phoenix AZ 2024-07-15 filter_type=3 granularity=100 analytic_type=tcm
+- date_time = OBJECT {"start_date":"2024-07-15","filter_type":3}
+- Result path: data.result.map_data.features[].properties.average_temperature
+- Cached: cache/heatmap_Phoenix_AZ_2024-07-15_result.json
 
-### /v1/env_params (docs-confirmed, not live-tested)
+### /v1/env_params - CONFIRMED WORKING
 - POST https://api.fortyguard.com/v1/env_params
-- Required body: latitude, longitude, temperature (C float), date_time object
-- Optional: analysis list e.g. ["heat_index_celsius", "apparent_temperature_celsius"]
-- Heat index field name: heat_index_celsius
+- Required: latitude, longitude, temperature (C float), date_time object
+- analysis: ["heat_index_celsius","apparent_temperature_celsius","relative_humidity_percent"]
+- Result path: data.result.locations[0].parameters.heat_index_celsius (array of 24 hourly values)
+- Cached: cache/env_params_{geoid}.json (20 files)
 
 ### CDC PLACES
-- URL: https://chronicdata.cdc.gov/resource/cwsq-ngmh.json
-- No auth. Filter: StateAbbr=AZ&countyfips=04013&Year=2022
-- Pagination: &%24limit=5000&%24offset=N
-- 40 measures available, 993 tracts in Maricopa
-
-### TIGERweb
-- URL: https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/0/query
-- No auth. Params: where="STATE='04' AND COUNTY='013'", outSR=4326, f=geojson
+- https://chronicdata.cdc.gov/resource/cwsq-ngmh.json
+- Filter: StateAbbr=AZ&countyfips=04013&Year=2022
+- Pagination: %24limit=5000&%24offset=N
 
 ### Gemini API
 - Model: gemini-2.0-flash
-- Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+- POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
 - Header: x-goog-api-key: YOUR_KEY
 
 ---
