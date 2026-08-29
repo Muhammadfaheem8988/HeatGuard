@@ -1,4 +1,4 @@
-# Environment / secrets � NEVER commit these
+﻿# Environment / secrets — NEVER commit these
 .env
 *.env
 
@@ -20,6 +20,7 @@ cache/*.parquet
 cache/*.geojson
 
 # Data files (pulled at runtime)
+!data/maricopa_tracts.geojson
 data/*.parquet
 data/*.geojson
 data/*.csv
