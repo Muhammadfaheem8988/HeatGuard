@@ -1,165 +1,122 @@
 """
-config.py — HeatGuard Alerts
+config.py -- HeatGuard Alerts
 =============================
-ALL config constants live here. After Hour 0-2 API validation, fill in the
-DEMO_* constants below. Every other module imports from here — never hardcode
-city/date/polygon anywhere else.
+ALL config constants live here.
 
-KEY PRINCIPLE: Weights sum to 1.0 within each group. Tunable without touching logic.
+CONFIRMED WORKING COMBO (2026-08-29 validated):
+  City: Phoenix, AZ | Date: 2024-07-15 | filter_type=3 | granularity=100
+  activity_id: 1a368278-6c38-41d5-a60f-c5ef3396e112
+  Result: Completed, tiles with average_temperature ~35.6C
+
+KEY FINDING: date_time is an OBJECT not separate start_date/start_time fields.
 """
 
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
 
-# ---------------------------------------------
-# API KEYS (from .env — never hardcode here)
-# ---------------------------------------------
+# API KEYS
 FORTYGUARD_API_KEY = os.getenv("FORTYGUARD_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-# ---------------------------------------------
-# FORTYGUARD API BASE URL
-# (confirm exact base URL from hackathon docs)
-# ---------------------------------------------
+# FORTYGUARD API - ALL CONFIRMED
 FG_BASE_URL = "https://api.fortyguard.com"
+FG_HEATMAP_ENDPOINT = "/v1/heatmap"
+FG_ENV_PARAMS_ENDPOINT = "/v1/env_params"
+FG_STATUS_ENDPOINT = "/v1/status"
 
-# ---------------------------------------------
-# DEMO CITY / DATE / AOI
-# !! Lock these in after Hour 0-2 API validation !!
-# ---------------------------------------------
-DEMO_CITY = "Phoenix, AZ"        # Primary candidate (heat-relevant, PRD recommended)
-DEMO_CITY_NAME_SHORT = "Phoenix"  # For display
-DEMO_STATE_FIPS = "04"           # Arizona
-DEMO_COUNTY_FIPS = "04013"       # Maricopa County (Phoenix metro)
+# DEMO CITY / DATE - LOCKED
+DEMO_CITY = "Phoenix, AZ"
+DEMO_CITY_NAME_SHORT = "Phoenix"
+DEMO_STATE_FIPS = "04"
+DEMO_COUNTY_FIPS = "04013"
+DEMO_DATE = "2024-07-15"
+DEMO_START_TIME = "00:00"
+DEMO_SNAPSHOT_LABEL = "July 15, 2024 (Historical)"
 
-# These are CANDIDATES — validate against /v1/heatmap before locking
-# Phoenix summer 2024 during documented heat event
-DEMO_DATE_CANDIDATE_1 = "2024-07-15"    # Primary: Phoenix July 2024 heat event
-DEMO_DATE_CANDIDATE_2 = "2024-08-01"    # Backup candidate
-DEMO_DATE_CANDIDATE_3 = "2023-07-18"    # Further backup: 2023 heat event
-DEMO_START_TIME = "00:00"               # Start of day (filter_type=3 = full day)
-
-# Lock this AFTER successful API validation:
-DEMO_DATE = None  # e.g., "2024-07-15" — set after confirming non-empty tile response
-
-# Phoenix central AOI polygon (approx 20km x 20km — well under 130km2 limit)
-# [lon, lat] order. Ring MUST close (first == last point).
-DEMO_AOI_PHOENIX = {
+# PHOENIX AOI - CONFIRMED WORKING
+DEMO_AOI = {
     "type": "FeatureCollection",
-    "features": [
-        {
-            "type": "Feature",
-            "properties": {},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[
-                    [-112.15, 33.37],   # SW corner
-                    [-111.85, 33.37],   # SE corner
-                    [-111.85, 33.63],   # NE corner
-                    [-112.15, 33.63],   # NW corner
-                    [-112.15, 33.37]    # Close ring (= SW corner)
-                ]]
-            }
+    "features": [{
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [-112.15, 33.37], [-111.85, 33.37],
+                [-111.85, 33.63], [-112.15, 33.63],
+                [-112.15, 33.37]
+            ]]
         }
-    ]
+    }]
 }
 
-# Houston backup AOI (~20km x 20km central)
-DEMO_AOI_HOUSTON = {
-    "type": "FeatureCollection",
-    "features": [
-        {
-            "type": "Feature",
-            "properties": {},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[
-                    [-95.50, 29.65],
-                    [-95.20, 29.65],
-                    [-95.20, 29.90],
-                    [-95.50, 29.90],
-                    [-95.50, 29.65]
-                ]]
-            }
-        }
-    ]
-}
-
-# ---------------------------------------------
 # FORTYGUARD REQUEST PARAMS
-# ---------------------------------------------
-GRANULARITY = 100           # meters (start coarse for validation; can tighten later)
-FILTER_TYPE = 3             # 3 = full day diurnal curve
-ANALYTIC_TYPE = "tcm"       # temperature snapshot per tile, degrees C
-POLL_INTERVAL_SECONDS = 10  # how often to poll /v1/status/{activity_id}
-POLL_MAX_RETRIES = 60       # max 10 min wait (60 × 10s)
+GRANULARITY = 100
+FILTER_TYPE = 3
+ANALYTIC_TYPE = "tcm"
+POLL_INTERVAL_SECONDS = 10
+POLL_MAX_RETRIES = 90
 
-# ---------------------------------------------
-# VULNERABILITY SCORING WEIGHTS
-# Must sum to 1.0
-# ---------------------------------------------
-W_AGE = 0.4      # pct_age_65_plus (strongest heat-mortality risk factor)
-W_POVERTY = 0.3  # pct_poverty (reduced adaptive capacity)
-W_AC = 0.3       # pct_no_ac (direct mitigation access)
+def make_date_time(start_date=None, filter_type=None, start_time=None):
+    """Build the date_time object for FortyGuard API requests.
+    Confirmed format: {"date_time": {"start_date": "2024-07-15", "filter_type": 3}}
+    """
+    dt = {"start_date": start_date or DEMO_DATE, "filter_type": filter_type or FILTER_TYPE}
+    if start_time:
+        dt["start_time"] = start_time
+    return dt
 
-assert abs(W_AGE + W_POVERTY + W_AC - 1.0) < 1e-9, "Vulnerability weights must sum to 1.0"
+# HEATMAP RESULT FIELDS (CONFIRMED from live response)
+# data.result.map_data = GeoJSON FeatureCollection
+# feature.properties: tile_id, average_temperature, min_temperature, max_temperature
+HEATMAP_TEMP_FIELD = "average_temperature"
+HEATMAP_MIN_FIELD = "min_temperature"
+HEATMAP_MAX_FIELD = "max_temperature"
 
-# ---------------------------------------------
-# HEAT SEVERITY WEIGHTS
-# Must sum to 1.0
-# ---------------------------------------------
-W_TEMP = 0.4       # raw air temperature
-W_HEATINDEX = 0.6  # heat index (more human-relevant, weighted higher)
+# ENV PARAMS FIELD NAMES (CONFIRMED from docs)
+# Required: latitude, longitude, temperature (C), date_time
+ENV_PARAMS_HEAT_INDEX_FIELD = "heat_index_celsius"
+ENV_PARAMS_ANALYSIS_FIELDS = ["heat_index_celsius", "apparent_temperature_celsius", "relative_humidity_percent"]
 
-assert abs(W_TEMP + W_HEATINDEX - 1.0) < 1e-9, "Heat severity weights must sum to 1.0"
+# VULNERABILITY SCORING WEIGHTS - must sum to 1.0
+W_AGE = 0.4
+W_POVERTY = 0.3
+W_AC = 0.3
+assert abs(W_AGE + W_POVERTY + W_AC - 1.0) < 1e-9
 
-# ---------------------------------------------
-# FINAL RISK SCORE WEIGHTS
-# Must sum to 1.0
-# ---------------------------------------------
-W_HEAT = 0.5  # heat severity contribution
-W_VULN = 0.5  # vulnerability contribution (equal weighting — defensible neutral default)
+# HEAT SEVERITY WEIGHTS - must sum to 1.0
+W_TEMP = 0.4
+W_HEATINDEX = 0.6
+assert abs(W_TEMP + W_HEATINDEX - 1.0) < 1e-9
 
-assert abs(W_HEAT + W_VULN - 1.0) < 1e-9, "Risk score weights must sum to 1.0"
+# FINAL RISK SCORE WEIGHTS - must sum to 1.0
+W_HEAT = 0.5
+W_VULN = 0.5
+assert abs(W_HEAT + W_VULN - 1.0) < 1e-9
 
-# ---------------------------------------------
-# ALERT TRIGGER THRESHOLDS
-# ---------------------------------------------
-ALERT_HEAT_INDEX_THRESHOLD_C = 39.0   # ~103°F — NOAA "Danger" level
-ALERT_VULN_THRESHOLD = 0.66            # Top tertile of vulnerability index
+# ALERT THRESHOLDS
+ALERT_HEAT_INDEX_THRESHOLD_C = 39.0
+ALERT_VULN_THRESHOLD = 0.66
 
-# ---------------------------------------------
-# ALERT DEMO CONTENT (placeholders — clearly labeled as illustrative)
-# ---------------------------------------------
+# COOLING CENTER (placeholder)
 COOLING_CENTER_NAME = "Phoenix Civic Center Cooling Station"
 COOLING_CENTER_ADDRESS = "200 W Jefferson St, Phoenix, AZ 85003"
 COOLING_CLOSING_TIME = "10:00 PM"
 DISCLAIMER_TEXT = "This is a simulated alert for demonstration purposes."
 
-# ---------------------------------------------
-# GEMINI API CONFIG
-# (confirm model name at aistudio.google.com before hardcoding)
-# ---------------------------------------------
-GEMINI_MODEL = "gemini-2.0-flash"     # Confirm this is current free-tier model
+# GEMINI
+GEMINI_MODEL = "gemini-2.0-flash"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-GEMINI_TIMEOUT_SECONDS = 8             # Max wait before fallback
+GEMINI_TIMEOUT_SECONDS = 8
 
-# ---------------------------------------------
-# CACHE DIRECTORY
-# ---------------------------------------------
+# PATHS
 CACHE_DIR = "cache"
-
-# ---------------------------------------------
-# TOP N TRACTS FOR RANKED LIST
-# ---------------------------------------------
+DATA_DIR = "data"
 TOP_N_TRACTS = 10
 
-# ---------------------------------------------
-# CENSUS / CDC CONSTANTS
-# ---------------------------------------------
+# CENSUS / CDC
 CENSUS_API_BASE = "https://api.census.gov/data"
-CENSUS_ACS_YEAR = "2022"   # Most recent stable ACS 5-year
+CENSUS_ACS_YEAR = "2022"
 CDC_PLACES_BASE = "https://chronicdata.cdc.gov/resource"
-CDC_PLACES_DATASET_ID = "cwsq-ngmh"  # CDC PLACES 2023 release (census tract level)
+CDC_PLACES_DATASET_ID = "cwsq-ngmh"
