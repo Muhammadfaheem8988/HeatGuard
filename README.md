@@ -328,3 +328,7 @@ This is a **demonstration system** built for the FortyGuard Hackathon 2026 using
 ---
 
 *Built in ~14 hours · FortyGuard Hackathon 2026 · Track 04: Government & Public Policy*
+
+---
+
+> Built by **Muhammad Faheem** · [github.com/Muhammadfaheen8988](https://github.com/Muhammadfaheen8988) · FortyGuard Hackathon 2026
