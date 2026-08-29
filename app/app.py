@@ -1,4 +1,4 @@
-﻿"""
+"""
 app/app.py  -  HeatGuard Alerts Dashboard
 ==========================================
 Streamlit dashboard for the FortyGuard Hackathon 2026.
@@ -35,7 +35,7 @@ st.set_page_config(
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 DATA_DIR = Path("data")
@@ -294,18 +294,26 @@ Data for July 15, 2024:
 
 Write the alert in the format: HEAT ALERT · [Location identifier]: [2-3 action sentences]."""
 
+    if not GEMINI_API_KEY:
+        return STATIC_ALERTS.get(geoid, f"HEAT ALERT | Tract {geoid[-6:]}: Risk score {tract.get('risk_score_final',0):.3f}. Peak heat index {f'{hi:.1f}' + chr(176) + 'C' if hi else 'elevated'}. Prioritize wellness checks for elderly and uninsured residents.")
     try:
         headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
-        body = {"contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"maxOutputTokens": 150, "temperature": 0.3}}
-        r = requests.post(GEMINI_URL, headers=headers, json=body, timeout=10)
+        body = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": 400, "temperature": 0.4}
+        }
+        r = requests.post(GEMINI_URL, headers=headers, json=body, timeout=30)
         if r.ok:
             data = r.json()
-            text = data["candidates"][0]["content"]["parts"][0]["text"]
-            return text.strip()
-    except Exception as e:
+            parts = data["candidates"][0]["content"]["parts"]
+            # Note: thinking models return 1 part with both "text" (the answer)
+            # and "thoughtSignature" (opaque). The "text" field IS the final answer.
+            text = " ".join(p["text"] for p in parts if p.get("text", "").strip()).strip()
+            if text:
+                return text
+    except Exception:
         pass
-    return STATIC_ALERTS.get(geoid, f"HEAT ALERT · Tract {geoid[-6:]}: Risk score {tract.get('risk_score_final',0):.3f}. Peak heat index {f'{hi:.1f}' + chr(176) + 'C' if hi else 'elevated'}. Prioritize wellness checks for elderly and uninsured residents.")
+    return STATIC_ALERTS.get(geoid, f"HEAT ALERT | Tract {geoid[-6:]}: Risk score {tract.get('risk_score_final',0):.3f}. Peak heat index {f'{hi:.1f}' + chr(176) + 'C' if hi else 'elevated'}. Prioritize wellness checks for elderly and uninsured residents.")
 
 selected_tracts = st.multiselect(
     "Select tracts to generate alerts for:",
