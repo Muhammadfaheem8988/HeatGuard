@@ -1,4 +1,4 @@
-﻿"""
+"""
 app/app.py  -  HeatGuard Alerts Dashboard
 Run from project root: streamlit run app/app.py
 """
@@ -143,6 +143,12 @@ st.markdown("""
     env_params heat index pulled for top-20 tracts · See README for real request/response examples
 </div>
 """, unsafe_allow_html=True)
+
+st.caption(
+    "📅 Using a verified historical snapshot (Jul 2024) to guarantee complete "
+    "FortyGuard tile coverage — recent/current dates intermittently return empty "
+    "tiles, a known platform behavior. Scoring logic is fully date-agnostic."
+)
 
 # ── KPI strip — no delta arrows ──────────────────────────────────────────────
 top1 = top10[0] if top10 else {}
