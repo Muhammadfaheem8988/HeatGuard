@@ -1,17 +1,38 @@
 # 🌡️ HeatGuard Alerts
+### Heat warnings tell a city it's hot. They don't tell you which block is dying.
 
 > **FortyGuard Hackathon 2026 — Track 04: Government & Public Policy**
->
-> Hyperlocal heat-risk intelligence that fuses real-time temperature data with
-> CDC vulnerability metrics to identify the 10 census tracts in Maricopa County, AZ
-> most at risk during an extreme heat event — and generates AI-powered field alerts
-> for emergency responders.
+
+Extreme heat kills more Americans every year than hurricanes, floods, and
+tornadoes combined — and the deaths aren't random. They cluster in
+specific blocks: elderly residents living alone, low-income households
+without air conditioning, neighborhoods with almost no tree canopy.
+
+A city-wide "Excessive Heat Warning" doesn't tell an emergency manager
+**which ten blocks** need a wellness check today. **HeatGuard Alerts does.**
+
+We fuse FortyGuard's hyperlocal temperature data with CDC public-health
+vulnerability metrics to rank every census tract in Maricopa County, AZ by
+**combined heat + vulnerability risk** — then use Gemini to auto-generate
+plain-language field alerts for the highest-risk tracts, ready for a real
+emergency response team to act on.
+
+**In this demo:** 80,336 real FortyGuard temperature tiles + 39,719 CDC
+health records → 319 scored tracts → a ranked, explainable, actionable
+priority list, live in under 3 seconds.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit%20Cloud-red?style=for-the-badge&logo=streamlit)](https://heatguard.streamlit.app)
 [![FortyGuard API](https://img.shields.io/badge/Powered%20by-FortyGuard%20API-orange?style=for-the-badge)](https://fortyguard.com)
 [![Gemini](https://img.shields.io/badge/AI%20Alerts-Gemini%203.5%20Flash-blue?style=for-the-badge&logo=google)](https://ai.google.dev)
 
+**Who this is for:** city emergency management offices, public health
+departments, and community organizations that need to prioritize limited
+outreach staff and cooling-center resources *before* a heat event turns fatal —
+not after.
+
 ---
+
+![HeatGuard Dashboard — choropleth map, KPI strip, and top-10 ranked tracts](docs/dashboard_screenshot.png)
 
 ## 🎯 What It Does
 
