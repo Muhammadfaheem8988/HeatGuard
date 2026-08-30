@@ -3,6 +3,14 @@
 
 ---
 
+## Known Platform Behavior
+
+Confirmed `/v1/heatmap` returns empty tiles (`n_cells: 0`) for recent/current dates
+during the hackathon window (Aug 2026). Locked demo to `2024-07-15` after validating
+full tile coverage (80,336 tiles returned). See `DEMO_DATE` constant in `app/app.py`
+and `data_pipeline/scoring_pipeline.py`, and README `## Warning Disclaimer` for full rationale.
+
+
 ## Current Status
 
 **Phase:** Dashboard + Gemini DONE. Stopping for night. Resume tomorrow.

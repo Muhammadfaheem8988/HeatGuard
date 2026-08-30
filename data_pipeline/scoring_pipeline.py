@@ -1,4 +1,4 @@
-﻿import json, time, os, requests
+import json, time, os, requests
 from pathlib import Path
 from collections import defaultdict
 
@@ -158,6 +158,8 @@ def call_env_params(lat, lon, temp_c, geoid):
         "latitude": round(float(lat), 6),
         "longitude": round(float(lon), 6),
         "temperature": round(float(temp_c), 2),
+        # 2024-07-15 is a verified date with full tile coverage (80,336 tiles).
+        # Recent dates intermittently return empty tiles — known platform behavior.
         "date_time": {"start_date": "2024-07-15", "filter_type": 3},
         "analysis": ["heat_index_celsius", "apparent_temperature_celsius", "relative_humidity_percent"]
     }

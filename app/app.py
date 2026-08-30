@@ -26,8 +26,14 @@ GEMINI_MODEL   = "gemini-3.5-flash-lite"
 GEMINI_URL     = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 DATA_DIR  = Path("data")
-DEMO_DATE = "July 15, 2024"
 DEMO_CITY = "Phoenix, AZ"
+
+# Verified working date — confirmed via direct API testing to return complete
+# tile coverage (80,336/80,336 tiles). Recent/current dates intermittently
+# return empty tiles (n_cells: 0), a known FortyGuard platform behavior during
+# the hackathon window. Change this constant to run against a live date once
+# that behavior is resolved — no other code changes required.
+DEMO_DATE = "July 15, 2024"
 
 TRACT_LABELS = {
     "04013981000": "SW Phoenix / Laveen",
