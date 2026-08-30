@@ -1,6 +1,6 @@
-import requests, json, time
+﻿import requests, json, time
 
-API_KEY = "f45468840a11216c24f4e7e24ab226f5"
+API_KEY = "YOUR_FORTYGUARD_API_KEY"
 BASE = "https://api.fortyguard.com"
 HEADERS = {"api-key": API_KEY, "Content-Type": "application/json"}
 

@@ -7,7 +7,7 @@ CACHE_DIR = Path("cache")
 DATA_DIR.mkdir(exist_ok=True)
 CACHE_DIR.mkdir(exist_ok=True)
 
-API_KEY = "f45468840a11216c24f4e7e24ab226f5"
+API_KEY = "YOUR_FORTYGUARD_API_KEY"
 BASE_URL = "https://api.fortyguard.com"
 HEADERS = {"api-key": API_KEY, "Content-Type": "application/json"}
 

@@ -31,7 +31,7 @@
 **Request:**
 ```bash
 curl -X POST "https://api.fortyguard.com/v1/heatmap" \
-  -H "api-key: f45468840a11216c24f4e7e24ab226f5" \
+  -H "api-key: YOUR_FORTYGUARD_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "location": {
@@ -61,7 +61,7 @@ curl -X POST "https://api.fortyguard.com/v1/heatmap" \
 **Poll for completion:**
 ```bash
 curl -X GET "https://api.fortyguard.com/v1/status/7b2f9c4e-1a3d-4e8b-9c2f-5d7e8a9b0c1d" \
-  -H "api-key: f45468840a11216c24f4e7e24ab226f5"
+  -H "api-key: YOUR_FORTYGUARD_API_KEY"
 ```
 
 **Response — Step 2 (Completed, 80,336 tiles):**
@@ -111,7 +111,7 @@ Called for each of the top-20 highest-risk tract centroids.
 **Request — Tract 04013981000 (SW Phoenix / Laveen, rank #1):**
 ```bash
 curl -X POST "https://api.fortyguard.com/v1/env_params" \
-  -H "api-key: f45468840a11216c24f4e7e24ab226f5" \
+  -H "api-key: YOUR_FORTYGUARD_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "latitude": 33.454955,
