@@ -16,7 +16,7 @@ load_dotenv()
 
 st.set_page_config(
     page_title="HeatGuard Alerts | Phoenix, AZ",
-    page_icon="🌡️",
+    page_icon="🔥",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -115,7 +115,7 @@ footer { visibility: hidden; }
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🌡️ HeatGuard Alerts")
+    st.markdown("## HeatGuard Alerts")
     st.caption(f"📅 {DEMO_DATE}  ·  {DEMO_CITY}")
     st.markdown("---")
     with st.expander("📊 Scoring Methodology", expanded=False):
@@ -138,14 +138,14 @@ with st.sidebar:
 # ── Header ───────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="main-header">
-    <h1>🌡️ HeatGuard Alerts</h1>
+    <h1>HeatGuard Alerts</h1>
     <p>Hyperlocal heat-risk intelligence for emergency managers &nbsp;·&nbsp; Phoenix, AZ &nbsp;·&nbsp; July 15, 2024</p>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="api-badge">
-    ✅ <b>Live data from FortyGuard Temperature API</b> — 80,336 heatmap tiles ingested ·
+    <b>Live data from FortyGuard Temperature API</b> — 80,336 heatmap tiles ingested ·
     env_params heat index pulled for top-20 tracts · See README for real request/response examples
 </div>
 """, unsafe_allow_html=True)
