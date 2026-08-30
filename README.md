@@ -1,4 +1,4 @@
-﻿# 🌡️ HeatGuard Alerts
+# 🌡️ HeatGuard Alerts
 
 > **FortyGuard Hackathon 2026 — Track 04: Government & Public Policy**
 >
@@ -323,7 +323,18 @@ pandas>=1.5.0
 
 ## ⚠️ Disclaimer
 
-This is a **demonstration system** built for the FortyGuard Hackathon 2026 using historical data (July 15, 2024). All alerts are clearly marked **SIMULATED — NOT SENT**. Not for operational emergency management use.
+This is a **demonstration system** built for the FortyGuard Hackathon 2026.
+All alerts are clearly marked **SIMULATED — NOT SENT**. Not for operational
+emergency management use.
+
+**Why July 15, 2024?** During development we confirmed via direct API testing
+that `/v1/heatmap` requests for current/recent dates intermittently return
+empty tile sets (`n_cells: 0`) for this region — a known platform behavior
+also reported by other hackathon teams in the FortyGuard Slack. We selected
+`2024-07-15` as a verified date with complete tile coverage (80,336 tiles
+returned) to guarantee a reliable demo. All fusion, scoring, and alert-generation
+logic is fully date-agnostic — swapping to a live date requires only changing
+the `start_date` value in the config, no logic changes.
 
 ---
 
