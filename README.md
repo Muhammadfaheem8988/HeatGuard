@@ -21,7 +21,7 @@ emergency response team to act on.
 health records → 319 scored tracts → a ranked, explainable, actionable
 priority list, live in under 3 seconds.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit%20Cloud-red?style=for-the-badge&logo=streamlit)](https://heatguard.streamlit.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit%20Cloud-red?style=for-the-badge&logo=streamlit)](https://heatguard-smartalerts.streamlit.app/)
 [![FortyGuard API](https://img.shields.io/badge/Powered%20by-FortyGuard%20API-orange?style=for-the-badge)](https://fortyguard.com)
 [![Gemini](https://img.shields.io/badge/AI%20Alerts-Gemini%203.5%20Flash-blue?style=for-the-badge&logo=google)](https://ai.google.dev)
 
