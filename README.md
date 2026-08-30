@@ -34,6 +34,10 @@ not after.
 
 ![HeatGuard Dashboard — choropleth map, KPI strip, and top-10 ranked tracts](docs/dashboard_screenshot.png)
 
+![Heat Risk Choropleth Map — Phoenix, AZ census tracts colored by combined risk score](docs/Heat%20risk%20map.png)
+
+![AI-Generated Emergency Alerts — Gemini-powered field alerts with SIMULATED badge](docs/alerts.png)
+
 ## 🎯 What It Does
 
 1. **Fetches FortyGuard heatmap** — 80,336 temperature tiles at 100m resolution for Phoenix, AZ (July 15, 2024)
